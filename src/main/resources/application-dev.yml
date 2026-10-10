@@ -5,3 +5,6 @@ spring:
 logging:
   level:
     com.travelhub: DEBUG
+travelhub:
+  seed:
+    enabled: ${DEV_SEED_ENABLED:true}

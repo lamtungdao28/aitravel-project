@@ -1,9 +1,12 @@
 package com.travelhub.common.util;
+
 import com.travelhub.common.exception.BusinessException;
-import java.util.Set;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
+import java.util.Set;
 
 public final class Pages {
     private Pages() {}
@@ -19,11 +22,17 @@ public final class Pages {
         if (allowed.contains("id") && sort.getOrderFor("id") == null) {
             sort = sort.and(Sort.by("id"));
         }
-        return PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 100), sort);
+        return PageRequest.of(
+                pageable.getPageNumber(), Math.min(pageable.getPageSize(), 100), sort);
     }
 
     public static String contains(String text) {
-        return "%" + text.trim().toLowerCase(java.util.Locale.ROOT)
-                .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        return "%"
+                + text.trim()
+                        .toLowerCase(java.util.Locale.ROOT)
+                        .replace("\\", "\\\\")
+                        .replace("%", "\\%")
+                        .replace("_", "\\_")
+                + "%";
     }
 }

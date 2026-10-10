@@ -2,17 +2,24 @@ package com.travelhub.place.entity;
 
 import com.travelhub.common.entity.BaseEntity;
 import com.travelhub.destination.entity.Destination;
+
 import jakarta.persistence.*;
-import java.math.BigDecimal;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.Check;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "places")
-@Check(constraints = "price_level between 0 and 4 and average_rating between 0 and 5 and review_count >= 0")
+@Check(
+        constraints =
+                "price_level between 0 and 4 and average_rating between 0 and 5 and review_count >="
+                    + " 0")
 @Getter
 @Setter
 @NoArgsConstructor

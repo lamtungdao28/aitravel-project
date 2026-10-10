@@ -1,6 +1,8 @@
 package com.travelhub;
+
 import org.junit.jupiter.api.Test;
 
 class ApplicationContextTest extends PostgresIntegrationTest {
-    @Test void contextLoads() {}
+    @Test
+    void contextLoads() {}
 }

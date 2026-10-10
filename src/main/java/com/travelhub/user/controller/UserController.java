@@ -4,21 +4,27 @@ import com.travelhub.user.dto.UserCreateRequest;
 import com.travelhub.user.dto.UserResponse;
 import com.travelhub.user.dto.UserUpdateRequest;
 import com.travelhub.user.service.UserService;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
-import java.net.URI;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Users")
-@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
     private final UserService userService;
 
@@ -34,7 +40,8 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public UserResponse update(@PathVariable @Positive Long id, @Valid @RequestBody UserUpdateRequest request) {
+    public UserResponse update(
+            @PathVariable @Positive Long id, @Valid @RequestBody UserUpdateRequest request) {
         return userService.update(id, request);
     }
 

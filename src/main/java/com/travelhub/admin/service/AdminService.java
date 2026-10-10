@@ -1,4 +1,5 @@
 package com.travelhub.admin.service;
+
 import com.travelhub.admin.dto.*;
 import com.travelhub.admin.repository.AdminStatisticsRepository;
 import com.travelhub.booking.dto.BookingResponse;
@@ -20,18 +21,25 @@ import com.travelhub.user.entity.User;
 import com.travelhub.user.mapper.UserMapper;
 import com.travelhub.user.repository.UserRepository;
 import com.travelhub.user.service.UserService;
+
 import jakarta.persistence.criteria.Predicate;
-import java.math.*;
-import java.time.*;
-import java.util.*;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service @RequiredArgsConstructor @Transactional(readOnly=true)
-@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+import java.math.*;
+import java.time.*;
+import java.util.*;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminService {
     private final UserRepository users;
     private final DestinationRepository destinations;
@@ -46,58 +54,122 @@ public class AdminService {
     private final ReviewService reviewService;
     private final Clock clock;
 
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('ADMIN_DASHBOARD_READ')")
     public DashboardOverviewResponse overview() {
-        return new DashboardOverviewResponse(users.count(),destinations.count(),places.count(),reviews.count(),trips.count(),
-                bookings.count(),bookings.countByStatus(BookingStatus.PENDING),bookings.countByStatus(BookingStatus.CONFIRMED),
+        return new DashboardOverviewResponse(
+                users.count(),
+                destinations.count(),
+                places.count(),
+                reviews.count(),
+                trips.count(),
+                bookings.count(),
+                bookings.countByStatus(BookingStatus.PENDING),
+                bookings.countByStatus(BookingStatus.CONFIRMED),
                 bookings.countByStatus(BookingStatus.CANCELLED));
     }
+
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('ADMIN_DASHBOARD_READ')")
     public UserStatisticsResponse userStatistics() {
-        return new UserStatisticsResponse(users.count(),statistics.newUsersSince(clock.instant().minus(Duration.ofDays(30))),statistics.usersByRole());
+        return new UserStatisticsResponse(
+                users.count(),
+                statistics.newUsersSince(clock.instant().minus(Duration.ofDays(30))),
+                statistics.usersByRole());
     }
+
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('ADMIN_DASHBOARD_READ')")
     public BookingStatisticsResponse bookingStatistics() {
-        Map<BookingStatus,Long> counts=new EnumMap<>(BookingStatus.class);
-        for(var s:BookingStatus.values()) counts.put(s,bookings.countByStatus(s));
-        return new BookingStatisticsResponse(bookings.count(),counts);
+        Map<BookingStatus, Long> counts = new EnumMap<>(BookingStatus.class);
+        for (var s : BookingStatus.values()) counts.put(s, bookings.countByStatus(s));
+        return new BookingStatisticsResponse(bookings.count(), counts);
     }
+
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('ADMIN_DASHBOARD_READ')")
     public PlaceStatisticsResponse placeStatistics() {
-        Double avg=statistics.averageRating();
-        return new PlaceStatisticsResponse(places.count(),statistics.bookablePlaces(),
-                avg==null ? BigDecimal.ZERO : BigDecimal.valueOf(avg).setScale(2,RoundingMode.HALF_UP));
+        Double avg = statistics.averageRating();
+        return new PlaceStatisticsResponse(
+                places.count(),
+                statistics.bookablePlaces(),
+                avg == null
+                        ? BigDecimal.ZERO
+                        : BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP));
     }
-    public PageResponse<UserResponse> users(String keyword,String role,Pageable p) {
-        Specification<User> spec=(root,q,cb) -> {
-            List<Predicate> filters=new ArrayList<>();
-            if(keyword!=null && !keyword.isBlank()) filters.add(cb.or(cb.like(cb.lower(root.get("email")),Pages.contains(keyword),'\\'),
-                    cb.like(cb.lower(root.get("fullName")),Pages.contains(keyword),'\\')));
-            if(role!=null && !role.isBlank()) filters.add(cb.equal(root.get("role").get("name"),role.toUpperCase(Locale.ROOT)));
-            return cb.and(filters.toArray(Predicate[]::new));
-        };
-        return PageResponse.from(users.findAll(spec,Pages.checked(p,"id","email","fullName","createdAt")).map(userMapper::toResponse));
+
+    public PageResponse<UserResponse> users(String keyword, String role, Pageable p) {
+        Specification<User> spec =
+                (root, q, cb) -> {
+                    List<Predicate> filters = new ArrayList<>();
+                    if (keyword != null && !keyword.isBlank())
+                        filters.add(
+                                cb.or(
+                                        cb.like(
+                                                cb.lower(root.get("email")),
+                                                Pages.contains(keyword),
+                                                '\\'),
+                                        cb.like(
+                                                cb.lower(root.get("fullName")),
+                                                Pages.contains(keyword),
+                                                '\\')));
+                    if (role != null && !role.isBlank())
+                        filters.add(
+                                cb.equal(
+                                        root.get("role").get("name"),
+                                        role.toUpperCase(Locale.ROOT)));
+                    return cb.and(filters.toArray(Predicate[]::new));
+                };
+        return PageResponse.from(
+                users.findAll(spec, Pages.checked(p, "id", "email", "fullName", "createdAt"))
+                        .map(userMapper::toResponse));
     }
-    public UserResponse user(Long id) {return userService.get(id);}
-    @Transactional public void deleteUser(Long id) {userService.delete(id);}
-    @Transactional public void deleteReview(Long id) {reviewService.delete(id);}
-    public PageResponse<ReviewResponse> reviews(Long userId,Long placeId,Integer minRating,Pageable p) {
-        Specification<Review> spec=(root,q,cb) -> {
-            List<Predicate> f=new ArrayList<>();
-            if(userId!=null)f.add(cb.equal(root.get("user").get("id"),userId));
-            if(placeId!=null)f.add(cb.equal(root.get("place").get("id"),placeId));
-            if(minRating!=null)f.add(cb.ge(root.get("rating"),minRating));
-            return cb.and(f.toArray(Predicate[]::new));
-        };
-        return reviewService.mapPage(reviews.findAll(spec,Pages.checked(p,"id","createdAt","rating")));
+
+    public UserResponse user(Long id) {
+        return userService.get(id);
     }
-    public PageResponse<BookingResponse> bookings(Long userId,Long placeId,BookingStatus status,LocalDate from,LocalDate to,Pageable p) {
-        if(from!=null && to!=null && to.isBefore(from)) throw new BusinessException("dateTo must not precede dateFrom");
-        Specification<Booking> spec=(root,q,cb) -> {
-            List<Predicate> f=new ArrayList<>();
-            if(userId!=null)f.add(cb.equal(root.get("user").get("id"),userId));
-            if(placeId!=null)f.add(cb.equal(root.get("place").get("id"),placeId));
-            if(status!=null)f.add(cb.equal(root.get("status"),status));
-            if(from!=null)f.add(cb.greaterThanOrEqualTo(root.get("bookingDate"),from));
-            if(to!=null)f.add(cb.lessThanOrEqualTo(root.get("bookingDate"),to));
-            return cb.and(f.toArray(Predicate[]::new));
-        };
-        return PageResponse.from(bookings.findAll(spec,Pages.checked(p,"id","createdAt","bookingDate","status")).map(bookingMapper::toResponse));
+
+    @Transactional
+    public void deleteUser(Long id) {
+        userService.delete(id);
+    }
+
+    @Transactional
+    public void deleteReview(Long id) {
+        reviewService.delete(id);
+    }
+
+    public PageResponse<ReviewResponse> reviews(
+            Long userId, Long placeId, Integer minRating, Pageable p) {
+        Specification<Review> spec =
+                (root, q, cb) -> {
+                    List<Predicate> f = new ArrayList<>();
+                    if (userId != null) f.add(cb.equal(root.get("user").get("id"), userId));
+                    if (placeId != null) f.add(cb.equal(root.get("place").get("id"), placeId));
+                    if (minRating != null) f.add(cb.ge(root.get("rating"), minRating));
+                    return cb.and(f.toArray(Predicate[]::new));
+                };
+        return reviewService.mapPage(
+                reviews.findAll(spec, Pages.checked(p, "id", "createdAt", "rating")));
+    }
+
+    public PageResponse<BookingResponse> bookings(
+            Long userId,
+            Long placeId,
+            BookingStatus status,
+            LocalDate from,
+            LocalDate to,
+            Pageable p) {
+        if (from != null && to != null && to.isBefore(from))
+            throw new BusinessException("dateTo must not precede dateFrom");
+        Specification<Booking> spec =
+                (root, q, cb) -> {
+                    List<Predicate> f = new ArrayList<>();
+                    if (userId != null) f.add(cb.equal(root.get("user").get("id"), userId));
+                    if (placeId != null) f.add(cb.equal(root.get("place").get("id"), placeId));
+                    if (status != null) f.add(cb.equal(root.get("status"), status));
+                    if (from != null) f.add(cb.greaterThanOrEqualTo(root.get("bookingDate"), from));
+                    if (to != null) f.add(cb.lessThanOrEqualTo(root.get("bookingDate"), to));
+                    return cb.and(f.toArray(Predicate[]::new));
+                };
+        return PageResponse.from(
+                bookings.findAll(spec, Pages.checked(p, "id", "createdAt", "bookingDate", "status"))
+                        .map(bookingMapper::toResponse));
     }
 }

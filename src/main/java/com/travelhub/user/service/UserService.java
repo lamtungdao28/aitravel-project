@@ -11,12 +11,16 @@ import com.travelhub.user.entity.User;
 import com.travelhub.user.mapper.UserMapper;
 import com.travelhub.user.repository.RoleRepository;
 import com.travelhub.user.repository.UserRepository;
-import java.util.Locale;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -32,11 +36,14 @@ public class UserService {
     public UserResponse create(UserCreateRequest request) {
         String email = normalizeEmail(request.email());
         checkEmailAvailable(email, -1L);
-        Role role = roleRepository.findByName("USER")
-                .orElseThrow(() -> new BusinessException("Default user role is unavailable"));
+        Role role =
+                roleRepository
+                        .findByName("USER")
+                        .orElseThrow(
+                                () -> new BusinessException("Default user role is unavailable"));
         User user = new User();
         user.setEmail(email);
-        if(request.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72)
+        if (request.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72)
             throw new BusinessException("Password must not exceed 72 UTF-8 bytes");
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setFullName(request.fullName().trim());
@@ -47,13 +54,13 @@ public class UserService {
         return userMapper.toResponse(user);
     }
 
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('USER_READ') and @access.owns(#id)")
+    @PreAuthorize("hasAuthority('USER_READ') and @access.owns(#id)")
     public UserResponse get(Long id) {
         return userMapper.toResponse(require(id));
     }
 
     @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('USER_UPDATE') and @access.owns(#id)")
+    @PreAuthorize("hasAuthority('USER_UPDATE') and @access.owns(#id)")
     public UserResponse update(Long id, UserUpdateRequest request) {
         User user = lock(id);
         String email = normalizeEmail(request.email());
@@ -67,13 +74,16 @@ public class UserService {
     }
 
     @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('USER_DELETE') and @access.owns(#id)")
+    @PreAuthorize("hasAuthority('USER_DELETE') and @access.owns(#id)")
     public void delete(Long id) {
         User user = lock(id);
-        if (userRepository.countReviews(id) > 0 || userRepository.countTrips(id) > 0
-                || userRepository.countBookings(id) > 0 || userRepository.countAddresses(id) > 0
+        if (userRepository.countReviews(id) > 0
+                || userRepository.countTrips(id) > 0
+                || userRepository.countBookings(id) > 0
+                || userRepository.countAddresses(id) > 0
                 || userRepository.countFavorites(id) > 0) {
-            throw new BusinessException("Cannot delete a user with reviews, trips, bookings, addresses, or favorites");
+            throw new BusinessException(
+                    "Cannot delete a user with reviews, trips, bookings, addresses, or favorites");
         }
         userRepository.delete(user);
         userRepository.flush();
@@ -81,12 +91,16 @@ public class UserService {
     }
 
     public User require(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
+        return userRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public User lock(Long id) {
-        return userRepository.findLockedById(id).orElseThrow(() -> new ResourceNotFoundException("User", id));
+        return userRepository
+                .findLockedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
     private void checkEmailAvailable(String email, Long excludedId) {

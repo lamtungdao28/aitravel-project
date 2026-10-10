@@ -3,13 +3,17 @@ package com.travelhub.booking.entity;
 import com.travelhub.common.entity.BaseEntity;
 import com.travelhub.place.entity.Place;
 import com.travelhub.user.entity.User;
+
 import jakarta.persistence.*;
-import java.time.LocalDate;
-import java.time.LocalTime;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.Check;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "bookings")

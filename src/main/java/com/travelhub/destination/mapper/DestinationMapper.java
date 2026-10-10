@@ -2,6 +2,7 @@ package com.travelhub.destination.mapper;
 
 import com.travelhub.destination.dto.*;
 import com.travelhub.destination.entity.Destination;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -29,15 +30,25 @@ public class DestinationMapper {
     }
 
     public DestinationResponse toResponse(Destination destination) {
-        return new DestinationResponse(destination.getId(), destination.getName(), destination.getCountry(),
-                destination.getDescription(), destination.getImageUrl(), destination.getLatitude(),
-                destination.getLongitude(), destination.getTimezone(), destination.getCreatedAt(),
+        return new DestinationResponse(
+                destination.getId(),
+                destination.getName(),
+                destination.getCountry(),
+                destination.getDescription(),
+                destination.getImageUrl(),
+                destination.getLatitude(),
+                destination.getLongitude(),
+                destination.getTimezone(),
+                destination.getCreatedAt(),
                 destination.getUpdatedAt());
     }
 
     public DestinationSummaryResponse toSummary(Destination destination) {
-        return new DestinationSummaryResponse(destination.getId(), destination.getName(),
-                destination.getCountry(), destination.getImageUrl());
+        return new DestinationSummaryResponse(
+                destination.getId(),
+                destination.getName(),
+                destination.getCountry(),
+                destination.getImageUrl());
     }
 
     private String normalizeTimezone(String timezone) {

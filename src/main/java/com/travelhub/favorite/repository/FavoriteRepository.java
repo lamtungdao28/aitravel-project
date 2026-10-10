@@ -2,6 +2,7 @@ package com.travelhub.favorite.repository;
 
 import com.travelhub.favorite.entity.Favorite;
 import com.travelhub.favorite.entity.FavoriteId;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;

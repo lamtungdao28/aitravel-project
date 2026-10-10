@@ -3,13 +3,17 @@ package com.travelhub.trip.entity;
 import com.travelhub.common.entity.BaseEntity;
 import com.travelhub.destination.entity.Destination;
 import com.travelhub.user.entity.User;
+
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDate;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.Check;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "trips")

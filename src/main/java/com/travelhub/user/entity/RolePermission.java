@@ -1,6 +1,7 @@
 package com.travelhub.user.entity;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,8 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class RolePermission {
-    @EmbeddedId
-    private RolePermissionId id = new RolePermissionId();
+    @EmbeddedId private RolePermissionId id = new RolePermissionId();
 
     @MapsId("roleId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

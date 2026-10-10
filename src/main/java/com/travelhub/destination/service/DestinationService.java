@@ -9,13 +9,19 @@ import com.travelhub.destination.entity.Destination;
 import com.travelhub.destination.mapper.DestinationMapper;
 import com.travelhub.destination.repository.DestinationRepository;
 import com.travelhub.destination.repository.DestinationSpecification;
-import java.time.DateTimeException;
-import java.time.ZoneId;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.DateTimeException;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -26,30 +32,39 @@ public class DestinationService {
     private final DestinationMapper destinationMapper;
 
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(cacheNames={"destinationDetails","destinationLists","placeDetails"},allEntries=true)
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('DESTINATION_CREATE')")
+    @CacheEvict(
+            cacheNames = {"destinationDetails", "destinationLists", "placeDetails"},
+            allEntries = true)
+    @PreAuthorize("hasAuthority('DESTINATION_CREATE')")
     public DestinationResponse create(DestinationCreateRequest request) {
         validateTimezone(request.timezone());
-        Destination destination = destinationRepository.saveAndFlush(destinationMapper.toEntity(request));
+        Destination destination =
+                destinationRepository.saveAndFlush(destinationMapper.toEntity(request));
         log.info("Created destination {}", destination.getId());
         return destinationMapper.toResponse(destination);
     }
 
-    @org.springframework.cache.annotation.Cacheable(cacheNames="destinationDetails",key="#id")
+    @Cacheable(cacheNames = "destinationDetails", key = "#id")
     public DestinationResponse get(Long id) {
         return destinationMapper.toResponse(requireDestination(id));
     }
 
-    @org.springframework.cache.annotation.Cacheable(cacheNames="destinationLists",key="@cacheKeys.key(#keyword,#country,#pageable)")
-    public PageResponse<DestinationResponse> search(String keyword, String country, Pageable pageable) {
-        Pageable checked = Pages.checked(pageable, "id", "name", "country", "createdAt", "updatedAt");
-        return PageResponse.from(destinationRepository.findAll(DestinationSpecification.search(keyword, country), checked)
-                .map(destinationMapper::toResponse));
+    @Cacheable(cacheNames = "destinationLists", key = "@cacheKeys.key(#keyword,#country,#pageable)")
+    public PageResponse<DestinationResponse> search(
+            String keyword, String country, Pageable pageable) {
+        Pageable checked =
+                Pages.checked(pageable, "id", "name", "country", "createdAt", "updatedAt");
+        return PageResponse.from(
+                destinationRepository
+                        .findAll(DestinationSpecification.search(keyword, country), checked)
+                        .map(destinationMapper::toResponse));
     }
 
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(cacheNames={"destinationDetails","destinationLists","placeDetails"},allEntries=true)
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('DESTINATION_UPDATE')")
+    @CacheEvict(
+            cacheNames = {"destinationDetails", "destinationLists", "placeDetails"},
+            allEntries = true)
+    @PreAuthorize("hasAuthority('DESTINATION_UPDATE')")
     public DestinationResponse update(Long id, DestinationUpdateRequest request) {
         Destination destination = requireDestination(id);
         validateTimezone(request.timezone());
@@ -60,8 +75,10 @@ public class DestinationService {
     }
 
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(cacheNames={"destinationDetails","destinationLists","placeDetails"},allEntries=true)
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('DESTINATION_DELETE')")
+    @CacheEvict(
+            cacheNames = {"destinationDetails", "destinationLists", "placeDetails"},
+            allEntries = true)
+    @PreAuthorize("hasAuthority('DESTINATION_DELETE')")
     public void delete(Long id) {
         Destination destination = requireDestination(id);
         if (destinationRepository.countPlaces(id) > 0) {
@@ -76,7 +93,8 @@ public class DestinationService {
     }
 
     private Destination requireDestination(Long id) {
-        return destinationRepository.findById(id)
+        return destinationRepository
+                .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Destination", id));
     }
 
@@ -87,7 +105,8 @@ public class DestinationService {
         try {
             ZoneId.of(timezone.trim());
         } catch (DateTimeException exception) {
-            throw new BusinessException("Timezone must be a valid IANA timezone, such as Asia/Ho_Chi_Minh");
+            throw new BusinessException(
+                    "Timezone must be a valid IANA timezone, such as Asia/Ho_Chi_Minh");
         }
     }
 }

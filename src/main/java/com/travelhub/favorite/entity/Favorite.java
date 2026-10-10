@@ -2,13 +2,17 @@ package com.travelhub.favorite.entity;
 
 import com.travelhub.place.entity.Place;
 import com.travelhub.user.entity.User;
+
 import jakarta.persistence.*;
-import java.time.Instant;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "favorites")
@@ -17,8 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Setter
 @NoArgsConstructor
 public class Favorite {
-    @EmbeddedId
-    private FavoriteId id = new FavoriteId();
+    @EmbeddedId private FavoriteId id = new FavoriteId();
 
     @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

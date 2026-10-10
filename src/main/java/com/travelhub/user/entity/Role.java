@@ -1,6 +1,7 @@
 package com.travelhub.user.entity;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

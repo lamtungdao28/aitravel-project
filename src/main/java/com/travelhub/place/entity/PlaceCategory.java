@@ -1,7 +1,9 @@
 package com.travelhub.place.entity;
 
 import com.travelhub.category.entity.Category;
+
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,8 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class PlaceCategory {
-    @EmbeddedId
-    private PlaceCategoryId id = new PlaceCategoryId();
+    @EmbeddedId private PlaceCategoryId id = new PlaceCategoryId();
 
     @MapsId("placeId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

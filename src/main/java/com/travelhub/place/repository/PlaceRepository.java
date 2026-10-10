@@ -1,15 +1,19 @@
 package com.travelhub.place.repository;
 
 import com.travelhub.place.entity.Place;
+
 import jakarta.persistence.LockModeType;
-import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface PlaceRepository extends JpaRepository<Place, Long>, JpaSpecificationExecutor<Place> {
+import java.util.Optional;
+
+public interface PlaceRepository
+        extends JpaRepository<Place, Long>, JpaSpecificationExecutor<Place> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Place p where p.id = :id")
     Optional<Place> findLockedById(@Param("id") Long id);

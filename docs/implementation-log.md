@@ -19,7 +19,22 @@ The project is developed in the requested phase order. Security is added only af
 | 13 | OpenAI-compatible client, bounded review summaries and history-based candidate selection | `mvn -B test`: 76 tests passed. Provider protocol tested with a mock server; no live API key supplied. |
 | 14 | Concurrent defaults/favorites, HTTP validation and deferred-cache failure coverage | `mvn -B test`: 80 tests passed. |
 | 15 | Multi-stage Java21 image and PostgreSQL/Redis/backend Compose stack | Clean build succeeded; all services healthy, health UP, Swagger HTTP200, public API HTTP200, container Java21 verified. PostgreSQL host port is 5433 to avoid an existing 5432 listener. |
-
 | 16 | BCrypt, signed access JWT, rotating hashed refresh tokens, database RBAC, service ownership checks, /me APIs and role management | 80 regression tests passed with security enabled; 8 additional JWT and real-token integration tests passed. |
+| 17 | Six Flyway migrations, indexes and constraints, dev-only seed, production profile, OpenAPI, README/ERD and formatting | Final `mvn -B verify`: 93 tests, zero failures/errors/skips, executable JAR packaged. Fresh Compose database migrated to v6; final image built and all three services healthy on Java 21.0.12.1. |
 
 Local Maven runs with JDK 25 using `--release 21`. Phase 15 also verified the Java 21 Docker runtime. Integration tests require Docker and deliberately fail when Docker is unavailable, rather than silently skipping database coverage.
+
+## Final Live Verification
+
+Verified on 2026-10-10 against the running Compose stack at `http://localhost:8080`:
+
+- Public health UP, Swagger HTTP 200 and generated OpenAPI with bearer authentication and 201 response documentation.
+- Seed destinations/places visible; collection default size 20.
+- Registration, BCrypt login, private profile, anonymous 401 and member administration 403.
+- Favorite creation, duplicate 409, listing/removal and address creation/deletion.
+- Trip creation, itinerary addition/listing and transactional trip deletion.
+- Review creation/deletion updates place ratings and invalidates the cached detail.
+- Refresh rotation rejects reuse; account deletion invalidates access and cascades stored refresh tokens.
+- Flyway history contains six successful migrations.
+
+Temporary smoke-test records were removed; development seed records and the running stack remain available. AI protocol/parsing is verified with mock provider responses only; no live provider key or paid call was used.

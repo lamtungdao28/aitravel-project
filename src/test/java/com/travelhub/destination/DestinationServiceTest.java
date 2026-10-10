@@ -1,5 +1,9 @@
 package com.travelhub.destination;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.travelhub.common.exception.BusinessException;
 import com.travelhub.common.exception.ResourceNotFoundException;
 import com.travelhub.destination.dto.DestinationCreateRequest;
@@ -8,16 +12,14 @@ import com.travelhub.destination.entity.Destination;
 import com.travelhub.destination.mapper.DestinationMapper;
 import com.travelhub.destination.repository.DestinationRepository;
 import com.travelhub.destination.service.DestinationService;
-import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class DestinationServiceTest {
@@ -31,17 +33,37 @@ class DestinationServiceTest {
 
     @Test
     void createNormalizesNamesAndRejectsInvalidTimezone() {
-        when(repository.saveAndFlush(any(Destination.class))).thenAnswer(invocation -> {
-            Destination destination = invocation.getArgument(0);
-            destination.setId(1L);
-            return destination;
-        });
-        var response = service.create(new DestinationCreateRequest(" Hanoi ", " Vietnam ", null,
-                null, null, null, "Asia/Ho_Chi_Minh"));
+        when(repository.saveAndFlush(any(Destination.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Destination destination = invocation.getArgument(0);
+                            destination.setId(1L);
+                            return destination;
+                        });
+        var response =
+                service.create(
+                        new DestinationCreateRequest(
+                                " Hanoi ",
+                                " Vietnam ",
+                                null,
+                                null,
+                                null,
+                                null,
+                                "Asia/Ho_Chi_Minh"));
         assertThat(response.name()).isEqualTo("Hanoi");
         assertThat(response.country()).isEqualTo("Vietnam");
-        assertThatThrownBy(() -> service.create(new DestinationCreateRequest("Paris", "France", null,
-                null, null, null, "Invalid/Timezone"))).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(
+                        () ->
+                                service.create(
+                                        new DestinationCreateRequest(
+                                                "Paris",
+                                                "France",
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                "Invalid/Timezone")))
+                .isInstanceOf(BusinessException.class);
         verify(repository, times(1)).saveAndFlush(any());
     }
 
@@ -54,8 +76,17 @@ class DestinationServiceTest {
     void updateChangesOnlyMutableFields() {
         Destination destination = destination();
         when(repository.findById(1L)).thenReturn(Optional.of(destination));
-        var response = service.update(1L, new DestinationUpdateRequest("Da Nang", "Vietnam", "Coastal city",
-                null, null, null, "Asia/Ho_Chi_Minh"));
+        var response =
+                service.update(
+                        1L,
+                        new DestinationUpdateRequest(
+                                "Da Nang",
+                                "Vietnam",
+                                "Coastal city",
+                                null,
+                                null,
+                                null,
+                                "Asia/Ho_Chi_Minh"));
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.name()).isEqualTo("Da Nang");
         verify(repository).flush();
@@ -65,7 +96,9 @@ class DestinationServiceTest {
     void deletionRejectsPlaces() {
         when(repository.findById(1L)).thenReturn(Optional.of(destination()));
         when(repository.countPlaces(1L)).thenReturn(1L);
-        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(BusinessException.class).hasMessageContaining("places");
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("places");
         verify(repository, never()).delete(any(Destination.class));
     }
 
@@ -73,7 +106,9 @@ class DestinationServiceTest {
     void deletionRejectsTrips() {
         when(repository.findById(1L)).thenReturn(Optional.of(destination()));
         when(repository.countTrips(1L)).thenReturn(1L);
-        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(BusinessException.class).hasMessageContaining("trips");
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("trips");
         verify(repository, never()).delete(any(Destination.class));
     }
 

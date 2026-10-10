@@ -1,2 +1,3 @@
 package com.travelhub.security.dto;
-public record TokenResponse(String accessToken,String refreshToken,String tokenType) {}
+
+public record TokenResponse(String accessToken, String refreshToken, String tokenType) {}

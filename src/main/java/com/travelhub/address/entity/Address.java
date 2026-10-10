@@ -2,10 +2,13 @@ package com.travelhub.address.entity;
 
 import com.travelhub.common.entity.BaseEntity;
 import com.travelhub.user.entity.User;
+
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity

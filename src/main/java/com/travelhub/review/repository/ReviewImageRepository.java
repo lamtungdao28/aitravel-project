@@ -1,12 +1,14 @@
 package com.travelhub.review.repository;
 
 import com.travelhub.review.entity.ReviewImage;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 public interface ReviewImageRepository extends JpaRepository<ReviewImage, Long> {
     List<ReviewImage> findByReviewIdOrderByIdAsc(Long reviewId);

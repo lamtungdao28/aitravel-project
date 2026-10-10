@@ -1,12 +1,16 @@
 package com.travelhub.trip.entity;
 
 import com.travelhub.place.entity.Place;
+
 import jakarta.persistence.*;
-import java.time.LocalDate;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.Check;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "trip_places")
@@ -15,8 +19,7 @@ import org.hibernate.annotations.Check;
 @Setter
 @NoArgsConstructor
 public class TripPlace {
-    @EmbeddedId
-    private TripPlaceId id = new TripPlaceId();
+    @EmbeddedId private TripPlaceId id = new TripPlaceId();
 
     @MapsId("tripId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

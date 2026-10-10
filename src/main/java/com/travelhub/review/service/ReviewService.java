@@ -13,17 +13,22 @@ import com.travelhub.review.mapper.ReviewMapper;
 import com.travelhub.review.repository.ReviewImageRepository;
 import com.travelhub.review.repository.ReviewRepository;
 import com.travelhub.user.service.UserService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +43,10 @@ public class ReviewService {
     private final UserService userService;
 
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(cacheNames={"placeDetails","popularPlaces","topRatedPlaces","reviewSummaries"},allEntries=true)
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('REVIEW_CREATE') and @access.owns(#request.userId())")
+    @CacheEvict(
+            cacheNames = {"placeDetails", "popularPlaces", "topRatedPlaces", "reviewSummaries"},
+            allEntries = true)
+    @PreAuthorize("hasAuthority('REVIEW_CREATE') and @access.owns(#request.userId())")
     public ReviewResponse create(Long placeId, ReviewCreateRequest request) {
         Place place = placeService.lock(placeId);
         List<String> imageUrls = request.imageUrls() == null ? List.of() : request.imageUrls();
@@ -65,25 +72,33 @@ public class ReviewService {
 
     public PageResponse<ReviewResponse> list(Long placeId, Pageable pageable) {
         placeService.require(placeId);
-        Page<Review> page = reviewRepository.findByPlaceId(placeId,
-                Pages.checked(pageable, "id", "createdAt", "updatedAt", "rating"));
+        Page<Review> page =
+                reviewRepository.findByPlaceId(
+                        placeId, Pages.checked(pageable, "id", "createdAt", "updatedAt", "rating"));
         return mapPage(page);
     }
 
     public PageResponse<ReviewResponse> mapPage(Page<Review> page) {
         if (page.isEmpty()) {
-            return PageResponse.from(page.map(review -> reviewMapper.toResponse(review, List.of())));
+            return PageResponse.from(
+                    page.map(review -> reviewMapper.toResponse(review, List.of())));
         }
         List<Long> reviewIds = page.getContent().stream().map(Review::getId).toList();
-        Map<Long, List<ReviewImage>> images = imageRepository.findByReviewIdInOrderByIdAsc(reviewIds).stream()
-                .collect(Collectors.groupingBy(image -> image.getReview().getId()));
-        return PageResponse.from(page.map(review -> reviewMapper.toResponse(review,
-                images.getOrDefault(review.getId(), List.of()))));
+        Map<Long, List<ReviewImage>> images =
+                imageRepository.findByReviewIdInOrderByIdAsc(reviewIds).stream()
+                        .collect(Collectors.groupingBy(image -> image.getReview().getId()));
+        return PageResponse.from(
+                page.map(
+                        review ->
+                                reviewMapper.toResponse(
+                                        review, images.getOrDefault(review.getId(), List.of()))));
     }
 
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(cacheNames={"placeDetails","popularPlaces","topRatedPlaces","reviewSummaries"},allEntries=true)
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('REVIEW_UPDATE') and @access.owns(@reviewService.ownerId(#id))")
+    @CacheEvict(
+            cacheNames = {"placeDetails", "popularPlaces", "topRatedPlaces", "reviewSummaries"},
+            allEntries = true)
+    @PreAuthorize("hasAuthority('REVIEW_UPDATE') and @access.owns(@reviewService.ownerId(#id))")
     public ReviewResponse update(Long id, ReviewUpdateRequest request) {
         Place place = lockPlaceForReview(id);
         Review review = require(id);
@@ -96,8 +111,10 @@ public class ReviewService {
     }
 
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(cacheNames={"placeDetails","popularPlaces","topRatedPlaces","reviewSummaries"},allEntries=true)
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('REVIEW_DELETE') and @access.owns(@reviewService.ownerId(#id))")
+    @CacheEvict(
+            cacheNames = {"placeDetails", "popularPlaces", "topRatedPlaces", "reviewSummaries"},
+            allEntries = true)
+    @PreAuthorize("hasAuthority('REVIEW_DELETE') and @access.owns(@reviewService.ownerId(#id))")
     public void delete(Long id) {
         Place place = lockPlaceForReview(id);
         Review review = require(id);
@@ -109,7 +126,8 @@ public class ReviewService {
     }
 
     @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('REVIEW_UPDATE') and @access.owns(@reviewService.ownerId(#reviewId))")
+    @PreAuthorize(
+            "hasAuthority('REVIEW_UPDATE') and @access.owns(@reviewService.ownerId(#reviewId))")
     public ReviewImageResponse addImage(Long reviewId, ReviewImageRequest request) {
         lockPlaceForReview(reviewId);
         Review review = require(reviewId);
@@ -120,35 +138,46 @@ public class ReviewService {
     }
 
     @Transactional
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('REVIEW_UPDATE') and @access.owns(@reviewService.imageOwnerId(#imageId))")
+    @PreAuthorize(
+            "hasAuthority('REVIEW_UPDATE') and @access.owns(@reviewService.imageOwnerId(#imageId))")
     public void deleteImage(Long imageId) {
-        Long reviewId = imageRepository.findReviewId(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review image", imageId));
+        Long reviewId =
+                imageRepository
+                        .findReviewId(imageId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Review image", imageId));
         lockPlaceForReview(reviewId);
-        ReviewImage image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review image", imageId));
+        ReviewImage image =
+                imageRepository
+                        .findById(imageId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Review image", imageId));
         imageRepository.delete(image);
         imageRepository.flush();
         log.info("Deleted image {} from review {}", imageId, reviewId);
     }
 
     public Long ownerId(Long reviewId) {
-        return reviewRepository.findUserId(reviewId)
+        return reviewRepository
+                .findUserId(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
     }
 
     public Long imageOwnerId(Long imageId) {
-        return imageRepository.findUserId(imageId)
+        return imageRepository
+                .findUserId(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review image", imageId));
     }
 
     private Review require(Long id) {
-        return reviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Review", id));
+        return reviewRepository
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", id));
     }
 
     private Place lockPlaceForReview(Long reviewId) {
-        Long placeId = reviewRepository.findPlaceId(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
+        Long placeId =
+                reviewRepository
+                        .findPlaceId(reviewId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
         return placeService.lock(placeId);
     }
 
@@ -157,8 +186,11 @@ public class ReviewService {
         reviewRepository.flush();
         ReviewRepository.RatingStatistics statistics = reviewRepository.statistics(place.getId());
         place.setReviewCount(Math.toIntExact(statistics.getReviewCount()));
-        place.setAverageRating(statistics.getAverageRating() == null ? BigDecimal.ZERO.setScale(2)
-                : BigDecimal.valueOf(statistics.getAverageRating()).setScale(2, RoundingMode.HALF_UP));
+        place.setAverageRating(
+                statistics.getAverageRating() == null
+                        ? BigDecimal.ZERO.setScale(2)
+                        : BigDecimal.valueOf(statistics.getAverageRating())
+                                .setScale(2, RoundingMode.HALF_UP));
         reviewRepository.flush();
     }
 

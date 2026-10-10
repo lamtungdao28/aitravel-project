@@ -3,10 +3,13 @@ package com.travelhub.review.entity;
 import com.travelhub.common.entity.BaseEntity;
 import com.travelhub.place.entity.Place;
 import com.travelhub.user.entity.User;
+
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.Check;
 
 @Entity

@@ -1,5 +1,7 @@
 package com.travelhub.destination;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.travelhub.PostgresIntegrationTest;
 import com.travelhub.destination.entity.Destination;
 import com.travelhub.destination.repository.DestinationRepository;
@@ -7,14 +9,14 @@ import com.travelhub.destination.repository.DestinationSpecification;
 import com.travelhub.place.entity.Place;
 import com.travelhub.trip.entity.Trip;
 import com.travelhub.user.entity.User;
+
 import jakarta.persistence.EntityManager;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 class DestinationRepositoryTest extends PostgresIntegrationTest {
@@ -26,8 +28,10 @@ class DestinationRepositoryTest extends PostgresIntegrationTest {
         createDestination("Da Nang", "Vietnam");
         createDestination("Da Lat", "Vietnam");
         createDestination("Dallas", "United States");
-        var result = repository.findAll(DestinationSpecification.search("DA", "VIETNAM"),
-                PageRequest.of(0, 1, Sort.by("name")));
+        var result =
+                repository.findAll(
+                        DestinationSpecification.search("DA", "VIETNAM"),
+                        PageRequest.of(0, 1, Sort.by("name")));
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getTotalPages()).isEqualTo(2);
         assertThat(result.getContent()).extracting(Destination::getName).containsExactly("Da Lat");
@@ -39,9 +43,11 @@ class DestinationRepositoryTest extends PostgresIntegrationTest {
         createDestination("100% Amazing", "Vietnam");
         createDestination("Under_score", "Vietnam");
         assertThat(repository.findAll(DestinationSpecification.search("%", null)))
-                .extracting(Destination::getName).containsExactly("100% Amazing");
+                .extracting(Destination::getName)
+                .containsExactly("100% Amazing");
         assertThat(repository.findAll(DestinationSpecification.search("_", null)))
-                .extracting(Destination::getName).containsExactly("Under_score");
+                .extracting(Destination::getName)
+                .containsExactly("Under_score");
     }
 
     @Test
