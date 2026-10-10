@@ -1,0 +1,21 @@
+-- Cover foreign-key lookups, ranked lists and time-ordered collections.
+CREATE INDEX idx_users_role ON users(role_id);
+CREATE UNIQUE INDEX idx_users_email_lower ON users(lower(email));
+CREATE UNIQUE INDEX idx_categories_name_lower ON categories(lower(name));
+CREATE INDEX idx_places_destination ON places(destination_id);
+CREATE INDEX idx_places_rating ON places(average_rating DESC, id);
+CREATE INDEX idx_places_popular ON places(review_count DESC, id);
+CREATE INDEX idx_place_categories_category ON place_categories(category_id);
+CREATE INDEX idx_reviews_place_recent ON reviews(place_id, created_at DESC, id);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
+CREATE INDEX idx_review_images_review ON review_images(review_id);
+CREATE INDEX idx_bookings_user ON bookings(user_id);
+CREATE INDEX idx_bookings_place ON bookings(place_id);
+CREATE INDEX idx_bookings_date ON bookings(booking_date);
+CREATE INDEX idx_trips_user ON trips(user_id);
+CREATE INDEX idx_trips_destination ON trips(destination_id);
+CREATE INDEX idx_trip_places_place ON trip_places(place_id);
+CREATE INDEX idx_trip_places_itinerary ON trip_places(trip_id, visit_date, sort_order);
+CREATE INDEX idx_addresses_user ON addresses(user_id);
+CREATE UNIQUE INDEX idx_addresses_one_default ON addresses(user_id) WHERE is_default;
+CREATE INDEX idx_favorites_place ON favorites(place_id);

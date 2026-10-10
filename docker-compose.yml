@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-travelhub}
+      POSTGRES_USER: ${DB_USERNAME:-travelhub}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-travelhub}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  backend:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-travelhub}
+      DB_USERNAME: ${DB_USERNAME:-travelhub}
+      DB_PASSWORD: ${DB_PASSWORD:-travelhub}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      JWT_SECRET: ${JWT_SECRET:-}
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
+    restart: unless-stopped
+volumes:
+  postgres_data:

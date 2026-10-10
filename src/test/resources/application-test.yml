@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+logging:
+  level:
+    root: WARN
+travelhub:
+  cache:
+    enabled: false
+jwt:
+  secret: test-only-jwt-secret-at-least-thirty-two-bytes
+security:
+  bcrypt-strength: 4
